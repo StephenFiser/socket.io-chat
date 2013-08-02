@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Socket Chat</title>
+	<style>
+		#send-message { display: none;}
+		#userNames { width: 300px; float: right; }
+		#message { width: 300px; height: 100px; }
+		#messages p strong { margin-right: 5px; }
+	</style>
+</head>
+<body>
+	<h1>Welcome to Socket.io Chat</h1>
+	<form id="setUserName">
+		<label for"userName">Choose a user name:</label>
+		<input type="text" id="userName" />
+		<input type="submit">
+	</form>
+	<form id="send-message">
+		<textarea id="message"></textarea>
+		<input type="submit">
+	</form>
+	<section id="userNames">
+		<ul></ul>
+	</section>
+	<section id="messages">
+	</section>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+	<script>
+		var socket = io.connect();
+		jQuery(function ($) {
+			var userName = $('#userName');
+			var setUserNameForm = $('#setUserName');
+			var userNameList = $('#userNames ul');
+			var messageForm = $('#send-message');
+			var message = $('#message');
+			var messages = $('#messages');
+			setUserNameForm.submit(function(e) {
+				e.preventDefault();
+				socket.emit('userName', userName.val(), function(data) {
+					if (data) {
+						console.log('Username set successfully');
+						setUserNameForm.hide();
+						messageForm.show();
+					} else {
+						setUserNameForm.prepend('<p>Sorry - That user name is already taken.</p>');
+					}
+				});
+				socket.on('error', function(data) {
+					window.alert(data.message);
+				});
+			});
+
+			messageForm.submit(function(e) {
+				e.preventDefault();
+				socket.emit('user message', message.val());
+				message.val('').focus();
+			});
+
+			socket.on('userNames', function(data) {
+				var html = '';
+				for (var i = 0; i < data.length; i++) {
+					html += '<li>' + data[i] + '</li>';
+				}
+				userNameList.empty().append(html);
+			});
+			socket.on('user message', function(data) {
+				messages.append('<p><strong>' + data.userName + ': </strong>' + data.message + '</p>');
+			});
+		});
+	</script>
+</body>
+</html>
